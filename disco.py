@@ -1,7 +1,7 @@
 import streamlit as st
 import re
 from datetime import datetime
-from google.cloud import translate_v2 as translate
+from deep_translator import GoogleTranslator
 
 # ─────────────────────────────────────────────
 # Language Config
@@ -28,48 +28,22 @@ LANGUAGES = {
 }
 
 # ─────────────────────────────────────────────
-# Google Translate helper
+# deep-translator helpers  (no API key needed)
 # ─────────────────────────────────────────────
-@st.cache_resource
-def get_translate_client():
-    """
-    Initialise Google Cloud Translation client.
-    Credentials are picked up automatically from:
-      - GOOGLE_APPLICATION_CREDENTIALS env var (service account JSON path), OR
-      - Application Default Credentials (gcloud auth application-default login)
-    """
-    return translate.Client()
-
 def translate_text(text: str, target_lang: str) -> str:
-    """Translate text to target language. Returns original text on error."""
+    """Translate English answer to the chosen language."""
     if target_lang == "en":
         return text
     try:
-        client = get_translate_client()
-        result = client.translate(text, target_language=target_lang, source_language="en")
-        return result["translatedText"]
+        return GoogleTranslator(source="en", target=target_lang).translate(text)
     except Exception as e:
         st.warning(f"⚠️ Translation unavailable: {e}")
         return text
 
-def detect_language(text: str) -> str:
-    """Detect language of input text."""
-    try:
-        client = get_translate_client()
-        result = client.detect_language(text)
-        return result["language"]
-    except Exception:
-        return "en"
-
 def translate_to_english(text: str) -> str:
-    """Translate any input text to English for KB matching."""
+    """Auto-detect language of user input and translate it to English."""
     try:
-        lang = detect_language(text)
-        if lang == "en":
-            return text
-        client = get_translate_client()
-        result = client.translate(text, target_language="en", source_language=lang)
-        return result["translatedText"]
+        return GoogleTranslator(source="auto", target="en").translate(text)
     except Exception:
         return text
 
@@ -418,7 +392,7 @@ with col1:
             <li>How to transfer eSIM?</li>
         </ul>
         <hr style="border-color:rgba(255,255,255,0.2)">
-        <p style="font-size:0.75rem;opacity:0.6">🌐 Powered by Google Cloud Translate · Hindi + 16 European languages</p>
+        <p style="font-size:0.75rem;opacity:0.6">🌐 Powered by deep-translator · Hindi + 16 European languages</p>
     </div>
     """, unsafe_allow_html=True)
 
